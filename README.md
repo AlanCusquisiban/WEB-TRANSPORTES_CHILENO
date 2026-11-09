@@ -25,20 +25,29 @@ Sistema web operativo para la gestion, rastreo GPS en tiempo real y control de l
 
 ---
 
-## Inicio Rapido
+## Inicio Rapido con Persistencia MySQL
 
-### Opcion A - Abrir directamente
-Haz doble clic en `index.html` y abrelo en tu navegador.
+### Opcion A - Ejecutar con el lanzador automatico (Recomendado)
+Haz doble clic en **`iniciar_proyecto.bat`** (o ejecuta `./iniciar_proyecto.ps1` en PowerShell).
+1. El script verifica o levanta el servicio de MySQL.
+2. Inicia el servidor `server.js` (o PHP alternativo).
+3. Auto-inicializa la base de datos `transportes_chileno` con sus 15 tablas y datos semilla si no existen.
+4. Abre automáticamente el navegador en `http://localhost:3000`.
 
-### Opcion B - Servidor Python (recomendado)
-
+### Opcion B - Con Node.js y npm
 ```bash
-python -m http.server 8085
-# Luego visita: http://localhost:8085
+npm install
+npm start
+# Visita: http://localhost:3000
 ```
 
-### Opcion C - VS Code Live Server
-Instala la extension **Live Server**, haz clic derecho en `index.html` y selecciona **Open with Live Server**.
+### Opcion C - Servidor PHP / XAMPP
+```bash
+php -S localhost:3000
+```
+
+### Opcion D - Modo Cliente Local (Sin servidor backend)
+Haz doble clic en `index.html`. La plataforma se ejecutará con respaldo en `localStorage` sin perder datos.
 
 ---
 
@@ -58,16 +67,21 @@ Instala la extension **Live Server**, haz clic derecho en `index.html` y selecci
 
 ## Panel de Administrador
 
-### 1. Dashboard
+### 1. Dashboard de KPIs Logísticos & Operativos
 
-Vista general del estado operativo de la flota en tiempo real.
+Panel integral de indicadores clave de desempeño (KPIs) en tiempo real para la toma de decisiones gerenciales:
 
 ![Dashboard](assets/screenshots/dashboard.jpg)
 
 **Funcionalidades:**
-- KPIs: Total vehiculos, En Ruta, En Descanso, Averia, Alertas activas
-- Grafica de viajes diarios
-- Vista previa del mapa GPS con posiciones actuales
+- **Métricas Primarias**: Unidades En Ruta, Disponibles en Base, En Taller/Avería y Alertas Críticas activas.
+- **KPIs de Combustible Diesel B5 S-50**: Galones consumidos totales, gasto acumulado en S/., rendimiento medio (km/galón) y distancia total recorrida.
+- **Auditoría Financiera & Rentabilidad (Fletes vs Costos)**: Ingresos brutos por fletes comerciales, costos consolidados, utilidad neta acumulada y margen operativo %.
+- **Estructura Gráfica de Costos**: Barra visual segmentada proporcional (Diesel 58%, Peajes 21%, Viáticos 16%, Seguros 5%).
+- **Composición & Disponibilidad de Flota**: Barra porcentual en tiempo real con índice de operatividad general de las 10 unidades.
+- **Productividad Semanal**: Gráfica de barras de viajes despachados por día.
+- **Salud Mecánica & Mantenimiento**: Tasa de resolución de averías (resueltas vs pendientes) e índice MTBF.
+- **Persistencia en Tiempo Real**: Badge de conexión con MySQL Server (`🟢 MySQL: Online` / `🟡 Modo Local`).
 
 ---
 
@@ -217,11 +231,19 @@ Vista simplificada y optimizada para uso movil en ruta.
 
 ```
 transportes-chileno-web/
-|-- index.html                 (HTML principal de la aplicacion)
+|-- index.html                 (HTML principal con dashboards de KPIs y accesibilidad)
 |-- styles.css                 (Sistema de diseno y estilos - WCAG 2.1 AA)
-|-- script.js                  (Logica de negocio, CRUD y seccion de refactorizacion)
+|-- script.js                  (Logica de negocio, sync MySQL, CRUD y refactorizacion §16)
+|-- server.js                  (Servidor Node.js Express con auto-setup de MySQL)
+|-- api.php                    (API REST PHP alternativa para XAMPP/Apache)
+|-- iniciar_proyecto.bat       (Lanzador de un clic para Windows)
+|-- iniciar_proyecto.ps1       (Lanzador PowerShell para Windows)
+|-- package.json               (Dependencias Express, MySQL2, Cors, Dotenv)
+|-- .env.example               (Variables de entorno para conexion MySQL)
 |-- GUIA_REFACTORIZACION.txt   (Guia academica, analisis de Code Smells y casos de prueba)
 |-- README.md                  (Esta documentacion)
+|-- database/
+    |-- transportes_chileno.sql (Esquema relacional de 15 tablas + datos semilla)
 |-- assets/
     |-- hero.jpg               (Imagen banner)
 ```
@@ -232,9 +254,12 @@ transportes-chileno-web/
 
 | Tecnologia | Version | Uso |
 |-----------|---------|-----|
-| HTML5 | - | Estructura semantica y accesibilidad |
+| HTML5 | - | Estructura semantica, accesibilidad y widgets de KPIs |
 | CSS3 | - | Diseno responsivo, variables CSS, glassmorphism |
-| JavaScript ES6+ | - | Logica de negocio, CRUD, gestion de estado |
+| JavaScript ES6+ | - | Logica de negocio, CRUD, gestion de estado y sync API |
+| MySQL | 8.0+ / MariaDB | Motor relacional de base de datos con persistencia |
+| Node.js / Express | 4.21+ | Backend API REST y auto-inicializacion de BD |
+| PHP (Opcional) | 8.2+ | Alternativa compatible para entornos con XAMPP |
 | Google Maps JavaScript API | v3 | Mapa GPS interactivo con marcadores y telemetria |
 | SheetJS (xlsx.js) | CDN | Generacion de reportes Excel |
 | Google Fonts | - | Outfit, Plus Jakarta Sans, JetBrains Mono |

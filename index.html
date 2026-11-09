@@ -26,6 +26,12 @@
         Plataforma Accesible WCAG 2.1 AA | Sistema Operativo de Flota
       </div>
       <div class="accessibility-bar__controls">
+        <!-- Database Persistence Status Indicator -->
+        <div id="db-status-pill" class="db-status-pill offline" title="Estado de la base de datos MySQL">
+          <span id="db-status-dot">🟡</span>
+          <span id="db-status-text">MySQL: Local</span>
+        </div>
+
         <!-- Logged In User Info Badge -->
         <div id="user-logged-badge" class="user-logged-badge hidden">
           <span id="user-logged-text">👨‍💼 Administrador (admin)</span>
@@ -215,42 +221,157 @@
         </div>
       </div>
 
-      <!-- Quick Operations & Mini Tracking Layout -->
+      <!-- Layout de Dashboards de KPIs Logísticos y Operativos -->
       <div class="grid grid-2 mt-6">
-        <!-- Live GPS Mini Preview Card -->
+        <!-- Dashboard KPI 1: Rendimiento, Combustible & Rentabilidad Financiera -->
         <div class="card">
           <div class="card-header">
-            <div class="card-icon" aria-hidden="true">📡</div>
-            <h3 class="card-title">Monitoreo GPS en Vivo — San Martín de Porres</h3>
+            <div class="card-icon" aria-hidden="true">📊</div>
+            <h3 class="card-title">Dashboard de KPIs Operativos & Rentabilidad</h3>
           </div>
           <div class="card-body">
-            <p class="text-muted">Visualización previa del rastreo continuo de la flota sobre la red vial.</p>
-            <div id="dashboard-mini-map" class="mini-map-element" aria-label="Mapa vista previa de rastreo"></div>
-            <div class="mt-3 text-right">
-              <button type="button" class="btn btn--sm btn--outline switch-tab-btn" data-target="view-tracking">Abrir Mapa Completo 🌐</button>
+            <!-- KPIs Combustible -->
+            <div class="kpi-section-title">⛽ Consumo de Combustible Diesel B5 S-50</div>
+            <div class="kpi-stat-boxes">
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Total Diesel</span>
+                <span class="kpi-stat-num" id="kpi-fuel-total-gals">33.2 gal</span>
+                <span class="kpi-stat-sub">Flota acumulada</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Costo Combustible</span>
+                <span class="kpi-stat-num" style="color:var(--gold)" id="kpi-fuel-total-cost">S/. 619.2</span>
+                <span class="kpi-stat-sub">@ S/. 18.65 / gal</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Rendimiento</span>
+                <span class="kpi-stat-num" style="color:var(--success)" id="kpi-fuel-km-gal">11.8 km/gal</span>
+                <span class="kpi-stat-sub">Media general</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Distancia Total</span>
+                <span class="kpi-stat-num" id="kpi-total-km-trips">260.2 km</span>
+                <span class="kpi-stat-sub">Rutas liquidadas</span>
+              </div>
+            </div>
+
+            <!-- KPIs Financieros -->
+            <div class="kpi-section-title mt-4">💰 Auditoría de Fletes & Costos de Transporte</div>
+            <div class="kpi-stat-boxes">
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Fletes Facturados</span>
+                <span class="kpi-stat-num" style="color:#38bdf8" id="kpi-total-fletes">S/. 2,254.34</span>
+                <span class="kpi-stat-sub">Ingresos brutos</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Costo Operativo</span>
+                <span class="kpi-stat-num" style="color:#f87171" id="kpi-total-costs">S/. 1,554.72</span>
+                <span class="kpi-stat-sub">Diesel + peajes + viát</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Utilidad Neta</span>
+                <span class="kpi-stat-num" style="color:var(--success)" id="kpi-total-utility">S/. 699.62</span>
+                <span class="kpi-stat-sub">Margen neto</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Rentabilidad</span>
+                <span class="kpi-stat-num" style="color:var(--gold)" id="kpi-net-margin">31.0%</span>
+                <span class="kpi-stat-sub">Margen comercial</span>
+              </div>
+            </div>
+
+            <!-- Desglose de Costos de Transporte -->
+            <div class="mt-2">
+              <div class="flex justify-between text-xs text-muted mb-1">
+                <span>Estructura de Costos Operativos:</span>
+                <span id="cost-breakdown-summary">Diesel (58%) • Peajes (21%) • Viáticos (16%) • Seguros (5%)</span>
+              </div>
+              <div class="kpi-multi-bar" id="costs-multi-bar">
+                <div class="kpi-bar-segment kpi-bar-segment--fuel" style="width: 58%" title="Combustible: 58%"></div>
+                <div class="kpi-bar-segment kpi-bar-segment--toll" style="width: 21%" title="Peajes: 21%"></div>
+                <div class="kpi-bar-segment kpi-bar-segment--driver" style="width: 16%" title="Viáticos Conductor: 16%"></div>
+                <div class="kpi-bar-segment kpi-bar-segment--ins" style="width: 5%" title="Seguro de Carga: 5%"></div>
+              </div>
+              <div class="kpi-legend-flex">
+                <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#f59e0b"></span> Combustible</span>
+                <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#8b5cf6"></span> Peajes</span>
+                <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#06b6d4"></span> Viáticos Conductor</span>
+                <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#64748b"></span> Seguro Carga</span>
+              </div>
+            </div>
+
+            <!-- Disponibilidad y Salud de Flota -->
+            <div class="kpi-section-title mt-4">🚛 Composición & Disponibilidad de Unidades</div>
+            <div class="kpi-multi-bar" id="fleet-composition-bar">
+              <div class="kpi-bar-segment kpi-bar-segment--ruta" id="bar-fleet-ruta" style="width: 50%" title="En Ruta"></div>
+              <div class="kpi-bar-segment kpi-bar-segment--disp" id="bar-fleet-disp" style="width: 30%" title="Disponibles"></div>
+              <div class="kpi-bar-segment kpi-bar-segment--taller" id="bar-fleet-taller" style="width: 20%" title="En Taller / Avería"></div>
+            </div>
+            <div class="kpi-legend-flex">
+              <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#10b981"></span> <b id="lbl-fleet-ruta">5 En Ruta</b></span>
+              <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#3b82f6"></span> <b id="lbl-fleet-disp">3 Disponibles</b></span>
+              <span class="kpi-legend-item"><span class="kpi-legend-dot" style="background:#ef4444"></span> <b id="lbl-fleet-taller">2 En Taller/Avería</b></span>
+              <span class="ml-auto text-xs text-muted" id="lbl-fleet-avail">Índice Operativo: <b style="color:var(--success)">80%</b></span>
+            </div>
+
+            <div class="mt-4 text-right">
+              <button type="button" class="btn btn--sm btn--outline switch-tab-btn" data-target="view-tracking">
+                Ver Rastreo GPS en Mapa 🌐
+              </button>
             </div>
           </div>
         </div>
 
-        <!-- System Alerts & Activity Feed -->
+        <!-- Dashboard KPI 2: Productividad Semanal, Salud Mecánica & Actividad -->
         <div class="card">
           <div class="card-header">
-            <div class="card-icon" aria-hidden="true">📋</div>
-            <h3 class="card-title">Registro de Actividad Reciente</h3>
+            <div class="card-icon" aria-hidden="true">📈</div>
+            <h3 class="card-title">Productividad Semanal & Salud Mecánica</h3>
           </div>
           <div class="card-body">
+            <!-- Gráfica de Viajes por Día -->
+            <div class="kpi-section-title">📅 Viajes Despachados (Últimos 7 Días)</div>
+            <div id="dashboard-bar-chart" class="bar-chart-container" style="height: 140px; display:flex; align-items:flex-end; gap:0.5rem; padding:0.5rem 0; border-bottom:1px solid var(--border-color); margin-bottom:1rem;"></div>
+
+            <!-- Salud Mecánica -->
+            <div class="kpi-section-title">🔧 Tasa de Resolución de Mantenimiento</div>
+            <div class="kpi-stat-boxes">
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Total Fallas</span>
+                <span class="kpi-stat-num" id="kpi-total-faults">3</span>
+                <span class="kpi-stat-sub">Reportadas</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Fallas Resueltas</span>
+                <span class="kpi-stat-num" style="color:var(--success)" id="kpi-resolved-faults">1</span>
+                <span class="kpi-stat-sub">En servicio</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Pendientes</span>
+                <span class="kpi-stat-num" style="color:var(--danger)" id="kpi-pending-faults">2</span>
+                <span class="kpi-stat-sub">En atención</span>
+              </div>
+              <div class="kpi-stat-box">
+                <span class="kpi-stat-label">Efectividad MTBF</span>
+                <span class="kpi-stat-num" style="color:var(--primary)" id="kpi-mtbf-score">94.2%</span>
+                <span class="kpi-stat-sub">Confiabilidad</span>
+              </div>
+            </div>
+
+            <!-- Registro de Actividad Reciente -->
+            <div class="kpi-section-title mt-4">📋 Registro de Eventos en Tiempo Real</div>
             <div id="activity-feed" class="activity-feed-list" role="log" aria-live="polite">
               <div class="feed-item feed-item--info">
                 <span class="feed-time">13:48</span>
-                <span class="feed-text">Sistema de monitoreo inicializado. 7 vehículos en catálogo.</span>
+                <span class="feed-text">Sistema sincronizado con la base de datos de operaciones.</span>
               </div>
               <div class="feed-item feed-item--success">
                 <span class="feed-time">13:42</span>
-                <span class="feed-text">Unidad V-01 iniciante trayecto Av. Dominicos &rarr; Callao.</span>
+                <span class="feed-text">Unidad V-01 en trayecto activo San Martín de Porres &rarr; Callao.</span>
               </div>
               <div class="feed-item feed-item--warning">
                 <span class="feed-time">12:15</span>
-                <span class="feed-text">Unidad V-05 ingresada a taller por revisión preventiva de llantas.</span>
+                <span class="feed-text">Unidad V-03 en mantenimiento correctivo preventivo de pastillas de freno.</span>
               </div>
             </div>
           </div>

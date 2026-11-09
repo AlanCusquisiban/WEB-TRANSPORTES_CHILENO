@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
   ];
 
   /* =========================================================================
-     §02 — UTILIDADES: TOAST Y ANUNCIADOR DE ACCESIBILIDAD
+     §02 — UTILIDADES: PERSISTENCIA MYSQL / LOCALSTORAGE, TOAST Y ACCESIBILIDAD
      Ubicación: script.js → §02
      ========================================================================= */
   const toastContainer = document.getElementById('toast-container');
@@ -183,6 +183,126 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const announcer = document.getElementById('accessibility-announcer');
   function announce(msg) { if (announcer) announcer.textContent = msg; }
+
+  // --- Capa de Persistencia MySQL & Fallback LocalStorage ---
+  const API_BASE = (window.location.origin && window.location.origin.startsWith('http')) ? '' : 'http://localhost:3000';
+  let isMySQLActive = false;
+
+  async function checkDatabaseConnection() {
+    const pill = document.getElementById('db-status-pill');
+    const text = document.getElementById('db-status-text');
+    const dot = document.getElementById('db-status-dot');
+
+    try {
+      const res = await fetch(`${API_BASE}/api/health`, { method: 'GET', headers: { 'Accept': 'application/json' } });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.connected) {
+          isMySQLActive = true;
+          if (pill) { pill.className = 'db-status-pill online'; pill.title = `Conectado a MySQL: ${data.database || 'transportes_chileno'}`; }
+          if (dot) dot.textContent = '🟢';
+          if (text) text.textContent = 'MySQL: Online';
+          
+          await loadBootstrapData();
+          return;
+        }
+      }
+    } catch (_err) {
+      // API offline o ejecutándose vía file:///
+    }
+
+    isMySQLActive = false;
+    if (pill) { pill.className = 'db-status-pill offline'; pill.title = 'Modo Local (Persistencia en localStorage activa)'; }
+    if (dot) dot.textContent = '🟡';
+    if (text) text.textContent = 'Modo Local (Offline)';
+    loadLocalStorageBackup();
+  }
+
+  async function loadBootstrapData() {
+    try {
+      const res = await fetch(`${API_BASE}/api/bootstrap`);
+      if (res.ok) {
+        const d = await res.json();
+        if (d.ok) {
+          if (Array.isArray(d.vehicles) && d.vehicles.length) vehiclesData = d.vehicles;
+          if (Array.isArray(d.drivers) && d.drivers.length) driversData = d.drivers;
+          if (Array.isArray(d.assignments) && d.assignments.length) assignmentsData = d.assignments;
+          if (Array.isArray(d.journeyHistory) && d.journeyHistory.length) journeyHistoryData = d.journeyHistory;
+          if (Array.isArray(d.mechanicalFaults) && d.mechanicalFaults.length) mechanicalFaultsData = d.mechanicalFaults;
+          if (Array.isArray(d.alerts) && d.alerts.length) alertsData = d.alerts;
+          if (d.adminCredentials) adminCredentials = d.adminCredentials;
+
+          saveLocalStorageBackup();
+          refreshAllViews();
+          console.log('[Persistencia] Sincronización exitosa con MySQL.');
+        }
+      }
+    } catch (e) {
+      console.warn('[Persistencia] Falló bootstrap MySQL, usando caché local.', e);
+      loadLocalStorageBackup();
+    }
+  }
+
+  function saveLocalStorageBackup() {
+    try {
+      localStorage.setItem('tc_vehicles', JSON.stringify(vehiclesData));
+      localStorage.setItem('tc_drivers', JSON.stringify(driversData));
+      localStorage.setItem('tc_assignments', JSON.stringify(assignmentsData));
+      localStorage.setItem('tc_journey', JSON.stringify(journeyHistoryData));
+      localStorage.setItem('tc_faults', JSON.stringify(mechanicalFaultsData));
+      localStorage.setItem('tc_alerts', JSON.stringify(alertsData));
+      localStorage.setItem('tc_admin', JSON.stringify(adminCredentials));
+    } catch (e) {
+      console.warn('Error en saveLocalStorageBackup:', e);
+    }
+  }
+
+  function loadLocalStorageBackup() {
+    try {
+      const v = localStorage.getItem('tc_vehicles');
+      if (v) vehiclesData = JSON.parse(v);
+      const d = localStorage.getItem('tc_drivers');
+      if (d) driversData = JSON.parse(d);
+      const a = localStorage.getItem('tc_assignments');
+      if (a) assignmentsData = JSON.parse(a);
+      const j = localStorage.getItem('tc_journey');
+      if (j) journeyHistoryData = JSON.parse(j);
+      const f = localStorage.getItem('tc_faults');
+      if (f) mechanicalFaultsData = JSON.parse(f);
+      const al = localStorage.getItem('tc_alerts');
+      if (al) alertsData = JSON.parse(al);
+      const adm = localStorage.getItem('tc_admin');
+      if (adm) adminCredentials = JSON.parse(adm);
+    } catch (e) {
+      console.warn('Error en loadLocalStorageBackup:', e);
+    }
+    refreshAllViews();
+  }
+
+  function refreshAllViews() {
+    renderFleetTable();
+    populateVehicleSelects();
+    renderAssignmentsTable();
+    renderHistoryTable();
+    renderFaultsTable();
+    renderAlertsTable();
+    renderCredentialsTable();
+    updateKPIs();
+  }
+
+  async function apiPersist(endpoint, method, body) {
+    saveLocalStorageBackup();
+    if (!isMySQLActive) return;
+    try {
+      await fetch(`${API_BASE}${endpoint}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      });
+    } catch (err) {
+      console.warn(`[Persistencia] Falló envío a ${endpoint}:`, err.message);
+    }
+  }
 
   /* =========================================================================
      §03 — AUTENTICACIÓN Y CONTROL DE SESIÓN
@@ -328,6 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const newPass = adminPassInput.value.trim();
     if (!newUser || !newPass) { alert('Usuario y contraseña no pueden estar vacíos.'); return; }
     adminCredentials = { user: newUser, pass: newPass };
+    apiPersist('/api/auth/update-credentials', 'POST', { type: 'admin', user: newUser, pass: newPass });
     if (currentUser?.role === 'admin') {
       currentUser.user = newUser;
       if (userBadgeText) userBadgeText.textContent = `👨‍💼 Administrador (${newUser})`;
@@ -368,6 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const d = driversData.find(item => item.id === id);
     if (d && newPass) {
       d.pass = newPass;
+      apiPersist('/api/auth/update-credentials', 'POST', { type: 'driver', driverId: d.nombre, newPass: newPass });
       renderDriverCredsTable();
       closeDriverPassModal();
       showToast(`Contraseña actualizada para: ${d.nombre}`, 'success');
@@ -375,15 +497,17 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* =========================================================================
-     §06 — KPI DASHBOARD
+     §06 — KPI DASHBOARD & INDICADORES LOGÍSTICOS
      Ubicación: script.js → §06
-     Tarjetas de resumen + gráfica de barras de viajes por semana.
+     Tarjetas de resumen, métricas de diesel, auditoría de fletes,
+     distribución de flota y gráfica de productividad semanal.
      ========================================================================= */
   function updateKPIs() {
+    const totalVeh  = vehiclesData.length || 1;
     const enRuta    = vehiclesData.filter(v => v.estado === 'En Ruta').length;
     const dispon    = vehiclesData.filter(v => v.estado === 'Disponible').length;
-    const taller    = vehiclesData.filter(v => v.estado === 'En Taller').length;
-    const pendAlert = alertsData.filter(a => a.estado === 'Pendiente').length;
+    const taller    = vehiclesData.filter(v => v.estado === 'En Taller' || v.estado === 'Averia').length;
+    const pendAlert = alertsData.filter(a => a.estado === 'Activa' || a.estado === 'Pendiente').length;
 
     setEl('kpi-val-active', enRuta);
     setEl('kpi-val-idle',   dispon);
@@ -393,6 +517,96 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const badge = document.getElementById('alerts-count-badge');
     if (badge) badge.textContent = pendAlert;
+
+    // Métricas de combustible y auditoría de fletes
+    let totalKm = 0;
+    let totalGals = 0;
+    let totalFuelCost = 0;
+    let totalPeajes = 0;
+    let totalViaticos = 0;
+    let totalFletes = 0;
+    let totalCostos = 0;
+    let totalUtilidad = 0;
+
+    journeyHistoryData.forEach(j => {
+      const km = Number(j.km) || 40.0;
+      totalKm += km;
+      const gals = Number(j.combustibleGals) || ((km / 12.5) * 1.25);
+      totalGals += gals;
+      const fuelCost = Number(j.costoCombustible) || (gals * 18.65);
+      totalFuelCost += fuelCost;
+      const peajes = Number(j.costoPeajes) || 52.0;
+      totalPeajes += peajes;
+      const viat = Number(j.viaticoConductor) || 95.0;
+      totalViaticos += viat;
+      const flete = Number(j.fleteComercial) || ((fuelCost + peajes + viat) * 1.45);
+      totalFletes += flete;
+      const cost = Number(j.costoOperativoTotal) || ((fuelCost + peajes + viat) * 1.015);
+      totalCostos += cost;
+      totalUtilidad += (flete - cost);
+    });
+
+    const rendimientoMedio = totalGals > 0 ? (totalKm / totalGals).toFixed(1) : '11.8';
+    const margenNetoPct = totalFletes > 0 ? ((totalUtilidad / totalFletes) * 100).toFixed(1) : '31.0';
+
+    setEl('kpi-fuel-total-gals', `${totalGals.toFixed(1)} gal`);
+    setEl('kpi-fuel-total-cost', `S/. ${totalFuelCost.toFixed(2)}`);
+    setEl('kpi-fuel-km-gal', `${rendimientoMedio} km/gal`);
+    setEl('kpi-total-km-trips', `${totalKm.toFixed(1)} km`);
+
+    setEl('kpi-total-fletes', `S/. ${totalFletes.toFixed(2)}`);
+    setEl('kpi-total-costs', `S/. ${totalCostos.toFixed(2)}`);
+    setEl('kpi-total-utility', `S/. ${totalUtilidad.toFixed(2)}`);
+    setEl('kpi-net-margin', `${margenNetoPct}%`);
+
+    // Desglose de costos de transporte
+    const sumaCostos = totalFuelCost + totalPeajes + totalViaticos + (totalCostos * 0.015);
+    if (sumaCostos > 0) {
+      const pctFuel = Math.round((totalFuelCost / sumaCostos) * 100);
+      const pctToll = Math.round((totalPeajes / sumaCostos) * 100);
+      const pctViat = Math.round((totalViaticos / sumaCostos) * 100);
+      const pctIns = Math.max(1, 100 - pctFuel - pctToll - pctViat);
+
+      const costsBar = document.getElementById('costs-multi-bar');
+      if (costsBar) {
+        costsBar.innerHTML = `
+          <div class="kpi-bar-segment kpi-bar-segment--fuel" style="width: ${pctFuel}%" title="Diesel: ${pctFuel}%"></div>
+          <div class="kpi-bar-segment kpi-bar-segment--toll" style="width: ${pctToll}%" title="Peajes: ${pctToll}%"></div>
+          <div class="kpi-bar-segment kpi-bar-segment--driver" style="width: ${pctViat}%" title="Viáticos Conductor: ${pctViat}%"></div>
+          <div class="kpi-bar-segment kpi-bar-segment--ins" style="width: ${pctIns}%" title="Seguro de Carga: ${pctIns}%"></div>
+        `;
+      }
+      setEl('cost-breakdown-summary', `Diesel (${pctFuel}%) • Peajes (${pctToll}%) • Viáticos (${pctViat}%) • Seguro (${pctIns}%)`);
+    }
+
+    // Composición de flota
+    const pctRuta = Math.round((enRuta / totalVeh) * 100);
+    const pctDisp = Math.round((dispon / totalVeh) * 100);
+    const pctTaller = Math.max(0, 100 - pctRuta - pctDisp);
+
+    const barRuta = document.getElementById('bar-fleet-ruta');
+    const barDisp = document.getElementById('bar-fleet-disp');
+    const barTaller = document.getElementById('bar-fleet-taller');
+    if (barRuta) barRuta.style.width = `${pctRuta}%`;
+    if (barDisp) barDisp.style.width = `${pctDisp}%`;
+    if (barTaller) barTaller.style.width = `${pctTaller}%`;
+
+    setEl('lbl-fleet-ruta', `${enRuta} En Ruta`);
+    setEl('lbl-fleet-disp', `${dispon} Disponibles`);
+    setEl('lbl-fleet-taller', `${taller} En Taller/Avería`);
+    const availPct = Math.round(((enRuta + dispon) / totalVeh) * 100);
+    const lblAvail = document.getElementById('lbl-fleet-avail');
+    if (lblAvail) lblAvail.innerHTML = `Índice Operativo: <b style="color:var(--success)">${availPct}%</b>`;
+
+    // Salud Mecánica
+    const totalFaults = mechanicalFaultsData.length;
+    const resFaults = mechanicalFaultsData.filter(f => f.estado === 'Resuelto').length;
+    const pendFaults = totalFaults - resFaults;
+    setEl('kpi-total-faults', totalFaults);
+    setEl('kpi-resolved-faults', resFaults);
+    setEl('kpi-pending-faults', pendFaults);
+    const mtbf = totalVeh > 0 ? (100 - (pendFaults * 3.5)).toFixed(1) : '95.0';
+    setEl('kpi-mtbf-score', `${mtbf}%`);
 
     renderBarChart();
   }
@@ -580,6 +794,7 @@ document.addEventListener('DOMContentLoaded', () => {
         alert(`La placa "${placa}" ya pertenece a otro vehículo.`); return;
       }
       Object.assign(vehiclesData[idx], { placa, marca, modelo, anio, capacidad, estado });
+      apiPersist(`/api/vehiculos/${editId}`, 'PUT', { placa, marca, modelo, anio, capacidad, estado });
       showToast(`Vehículo ${editId} (${placa}) actualizado correctamente.`, 'success');
     } else {
       if (vehiclesData.some(v => v.placa === placa)) {
@@ -587,6 +802,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const newId = `V-${String(vehiclesData.length + 1).padStart(2, '0')}`;
       vehiclesData.push({ id: newId, placa, marca, modelo, anio, capacidad, estado, soat: '2027-12-31', rt: '2027-12-31' });
+      apiPersist('/api/vehiculos', 'POST', { codigo: newId, placa, marca, modelo, anio, capacidad, estado });
       showToast(`Vehículo ${placa} registrado con ID ${newId}.`, 'success');
     }
 
@@ -599,6 +815,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function deleteVehicle(id) {
     if (!confirm(`¿Confirmar baja lógica del vehículo ${id}?\nEsta acción lo eliminará del catálogo activo.`)) return;
     vehiclesData = vehiclesData.filter(v => v.id !== id);
+    apiPersist(`/api/vehiculos/${id}`, 'DELETE');
     renderFleetTable();
     populateVehicleSelects();
     updateKPIs();
@@ -684,7 +901,15 @@ document.addEventListener('DOMContentLoaded', () => {
     driver.vehiculoAsignado = vehicle.id;
     driver.placa   = vehicle.placa;
 
-    assignmentsData.push({ id: Date.now(), vehiculoId: vehicle.id, placa: vehicle.placa, conductor: driver.nombre, inicio, estado: 'En Ruta' });
+    const asgObj = { id: Date.now(), vehiculoId: vehicle.id, placa: vehicle.placa, conductor: driver.nombre, inicio, estado: 'En Ruta' };
+    assignmentsData.push(asgObj);
+    apiPersist('/api/asignaciones', 'POST', {
+      codigo: `ASG-${Date.now()}`,
+      vehiculoCodigo: vehicle.id,
+      conductorCodigo: driver.id,
+      fechaInicio: inicio,
+      estado: 'En Ruta'
+    });
     populateVehicleSelects();
     renderAssignmentsTable();
     renderFleetTable();
@@ -932,6 +1157,15 @@ document.addEventListener('DOMContentLoaded', () => {
       estado: 'Pendiente'
     };
     alertsData.unshift(alert);
+    apiPersist('/api/alertas', 'POST', {
+      codigo: `ALT-${Date.now()}`,
+      vehiculoCodigo: unit.id,
+      tipo: 'Panico',
+      mensaje: `Alerta de pánico activada por ${unit.driver} en unidad ${unit.placa}`,
+      latitud: unit.lat,
+      longitud: unit.lng,
+      estado: 'Activa'
+    });
     renderAlertsTable();
     updateKPIs();
     if (emergencyBanner && emergencyDetails) {
@@ -946,6 +1180,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const a = alertsData.find(item => item.id === alertId);
     if (!a) return;
     a.estado = 'Atendida';
+    apiPersist(`/api/alertas/${alertId}`, 'PUT', { estado: 'Resuelta' });
     renderAlertsTable();
     updateKPIs();
     if (!alertsData.some(item => item.estado === 'Pendiente')) emergencyBanner?.classList.add('hidden');
@@ -1490,15 +1725,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Renderizado inicial de todas las vistas
+  // Renderizado inicial de todas las vistas y verificación de persistencia MySQL
   renderFleetTable();
   populateVehicleSelects();
   renderAssignmentsTable();
   renderHistoryTable();
   renderFaultsTable();
   renderAlertsTable();
+  renderDriverCredsTable();
   updateKPIs();
-  initMiniMap();
+  checkDatabaseConnection();
 
   /* =========================================================================
      §16 — EJERCICIO ACADÉMICO DE REFACTORIZACIÓN (SOLO CÓDIGO & COMENTARIOS)
@@ -1689,7 +1925,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const detraccionSunat = (fleteComercial + igv) * CONFIG_LOGISTICA.TASA_DETRACCION_SPOT;
     const utilidadNeta = fleteComercial - costoOperativoTotal;
 
-    return {
+    const resultObj = {
       viajeId: viaje.id,
       distanciaKm,
       combustible,
@@ -1702,6 +1938,25 @@ document.addEventListener('DOMContentLoaded', () => {
       utilidadNeta: Number(utilidadNeta.toFixed(2)),
       margenPorcentaje: Number(((utilidadNeta / fleteComercial) * 100).toFixed(1))
     };
+
+    apiPersist('/api/viajes', 'POST', {
+      id: viaje.id,
+      placa: viaje.placa,
+      conductor: viaje.conductor,
+      origen: viaje.origen,
+      destino: viaje.destino,
+      km: distanciaKm,
+      combustibleGals: combustible.galones,
+      costoCombustible: combustible.costo,
+      costoPeajes: peajes.costo,
+      viaticoConductor: conductor.neto,
+      costoOperativoTotal: resultObj.costoOperativoTotal,
+      fleteComercial: resultObj.fleteComercial,
+      utilidadNeta: resultObj.utilidadNeta,
+      margenPorcentaje: resultObj.margenPorcentaje
+    });
+
+    return resultObj;
   }
 
   // Ejemplo de invocación para pruebas en consola:

@@ -1,0 +1,16 @@
+{
+  "name": "transportes-chileno-web",
+  "version": "2.0.0",
+  "description": "Sistema de Monitoreo & Gestión de Flota Vehicular - Transportes Chileno E.I.R.L. con persistencia MySQL",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mysql2": "^3.14.0"
+  }
+}
