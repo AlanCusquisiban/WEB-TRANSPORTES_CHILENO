@@ -73,19 +73,18 @@ Vista general del estado operativo de la flota en tiempo real.
 
 ### 2. Rastreo GPS Live
 
-Mapa interactivo de alta disponibilidad (Leaflet + OpenStreetMap) con respaldo de Radar Vectorial Táctico Autónomo sobre HTML5 Canvas (100% funcional offline o sin tokens de API).
+Mapa interactivo de alta disponibilidad (Google Maps JavaScript API) con tema dark personalizado, marcadores vectoriales diferenciados por estado e inspector de telemetría en tiempo real.
 
 ![Rastreo GPS](assets/screenshots/gps.jpg)
 
 **Funcionalidades:**
 - Marcadores diferenciados por estado (En Ruta / Disponible / Averia)
-- Capa OpenStreetMap estándar libre de restricciones de tokens o cuotas
-- Modo de respaldo autónomo por radar táctico si falla la conexión externa o la librería CDN
-- Botón para alternar vistas de mapa satelital / radar vectorial táctico
+- Estilizado nocturno dark oficial de Google Maps
 - Filtro interactivo de vehículos en mapa por estado
 - Panel lateral con lista en vivo de unidades, telemetría y coordenadas
 - Actualizacion automatica de posiciones y velocidades por simulador GPS
 - Clic en vehiculo del mapa o de la lista centra y abre el inspector de la unidad
+- Deteccion automatica y manejo seguro ante fallos de API Key o red
 
 ---
 
@@ -218,20 +217,13 @@ Vista simplificada y optimizada para uso movil en ruta.
 
 ```
 transportes-chileno-web/
-|-- index.html         (HTML principal de la aplicacion)
-|-- styles.css         (Sistema de diseno y estilos - WCAG 2.1 AA)
-|-- script.js          (Logica de la aplicacion en vanilla JavaScript)
-|-- README.md          (Esta documentacion)
+|-- index.html                 (HTML principal de la aplicacion)
+|-- styles.css                 (Sistema de diseno y estilos - WCAG 2.1 AA)
+|-- script.js                  (Logica de negocio, CRUD y seccion de refactorizacion)
+|-- GUIA_REFACTORIZACION.txt   (Guia academica, analisis de Code Smells y casos de prueba)
+|-- README.md                  (Esta documentacion)
 |-- assets/
-    |-- hero.jpg       (Imagen banner)
-    |-- screenshots/
-        |-- login.jpg
-        |-- dashboard.jpg
-        |-- gps.jpg
-        |-- fleet.jpg
-        |-- driver_panel.jpg
-        |-- reports.jpg
-        |-- credentials.jpg
+    |-- hero.jpg               (Imagen banner)
 ```
 
 ---
@@ -243,7 +235,7 @@ transportes-chileno-web/
 | HTML5 | - | Estructura semantica y accesibilidad |
 | CSS3 | - | Diseno responsivo, variables CSS, glassmorphism |
 | JavaScript ES6+ | - | Logica de negocio, CRUD, gestion de estado |
-| Leaflet.js | 1.9.4 | Mapa GPS interactivo (OpenStreetMap) |
+| Google Maps JavaScript API | v3 | Mapa GPS interactivo con marcadores y telemetria |
 | SheetJS (xlsx.js) | CDN | Generacion de reportes Excel |
 | Google Fonts | - | Outfit, Plus Jakarta Sans, JetBrains Mono |
 
