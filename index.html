@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark" data-font-size="normal">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistema Web de Monitoreo & Gestión de Flota Vehicular - Transportes Chileno E.I.R.L. Autenticación de usuarios, geolocalización en tiempo real y control de operaciones.">
+  <title>Transportes Chileno E.I.R.L. | Sistema de Monitoreo & Gestión de Flota</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Accessible Skip Link -->
+  <a href="#main-content" class="skip-link">Saltar al contenido de operaciones</a>
+
+  <!-- Accessibility Toolbar -->
+  <div class="accessibility-bar" role="region" aria-label="Herramientas de accesibilidad de la plataforma">
+    <div class="container accessibility-bar__content">
+      <div class="accessibility-bar__status" id="accessibility-announcer" aria-live="polite" aria-atomic="true">
+        Plataforma Accesible WCAG 2.1 AA | Sistema Operativo de Flota
+      </div>
+      <div class="accessibility-bar__controls">
+        <!-- Logged In User Info Badge -->
+        <div id="user-logged-badge" class="user-logged-badge hidden">
+          <span id="user-logged-text">👨‍💼 Administrador (admin)</span>
+          <button type="button" id="btn-logout" class="btn-logout-link" title="Cerrar sesión actual">🚪 Cerrar Sesión</button>
+        </div>
+        
+        <div class="control-group">
+          <span class="control-label" id="label-theme">Tema:</span>
+          <button type="button" id="btn-theme-dark" class="btn-a11y active" aria-pressed="true" aria-labelledby="label-theme btn-theme-dark">Oscuro</button>
+          <button type="button" id="btn-theme-light" class="btn-a11y" aria-pressed="false" aria-labelledby="label-theme btn-theme-light">Claro</button>
+          <button type="button" id="btn-theme-hc" class="btn-a11y" aria-pressed="false" aria-labelledby="label-theme btn-theme-hc">Alto Contraste</button>
+        </div>
+        <div class="control-group">
+          <span class="control-label" id="label-font">Texto:</span>
+          <button type="button" id="btn-font-normal" class="btn-a11y active" aria-pressed="true" aria-label="Texto tamaño normal">A</button>
+          <button type="button" id="btn-font-medium" class="btn-a11y" aria-pressed="false" aria-label="Texto tamaño mediano">A+</button>
+          <button type="button" id="btn-font-large" class="btn-a11y" aria-pressed="false" aria-label="Texto tamaño grande">A++</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header & Main Navigation (Shown after Login) -->
+  <header class="site-header hidden" id="site-header">
+    <div class="container site-header__inner">
+      <div class="site-header__brand">
+        <div class="brand-logo" aria-hidden="true">
+          <svg viewBox="0 0 40 40" fill="none" width="38" height="38">
+            <rect width="40" height="40" rx="10" fill="url(#brand-grad)"/>
+            <path d="M8 24L20 10L32 24H24V29H16V24H8Z" fill="white"/>
+            <path d="M10 30H30V32H10V30Z" fill="#F59E0B"/>
+            <defs>
+              <linearGradient id="brand-grad" x1="0" y1="0" x2="40" y2="40">
+                <stop stop-color="#2563EB"/>
+                <stop offset="1" stop-color="#0F172A"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-name">Transportes Chileno E.I.R.L.</span>
+          <span class="brand-tag">Sistema de Monitoreo &amp; Control de Flota Vehicular</span>
+        </div>
+      </div>
+
+      <nav class="site-nav" id="site-nav" aria-label="Navegación del sistema de gestión">
+        <button type="button" class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-menu" aria-label="Abrir menú de navegación">
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+          <span class="hamburger-bar"></span>
+        </button>
+        <ul class="nav-menu" id="nav-menu">
+          <!-- Admin Tabs (Visible for Admin/Supervisor) -->
+          <li class="admin-only-tab"><button type="button" class="nav-tab active" data-target="view-dashboard">📊 Dashboard</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-tracking">📍 Rastreo GPS Live</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-fleet">🚛 Flota Vehicular</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-assignments">👨‍✈️ Asignaciones</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-history">📜 Historial Rutas</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-faults">🛠️ Fallas Mecánicas</button></li>
+          <li class="admin-only-tab">
+            <button type="button" class="nav-tab nav-tab--alert" data-target="view-alerts">
+              🚨 Alertas <span class="nav-badge" id="alerts-count-badge">0</span>
+            </button>
+          </li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-reports">📑 Reportes</button></li>
+          <li class="admin-only-tab"><button type="button" class="nav-tab" data-target="view-security">🔒 Credenciales</button></li>
+
+          <!-- Driver Only Tab (Visible when Driver logs in) -->
+          <li class="driver-only-tab hidden"><button type="button" class="nav-tab active" data-target="view-driver-app">📱 Mi Panel Conductor</button></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Emergency Banner (Appears on Panic Alert Trigger) -->
+  <div class="emergency-alert-banner hidden" id="emergency-alert-banner" role="alert" aria-live="assertive">
+    <div class="container emergency-alert-content">
+      <div class="emergency-alert-info">
+        <span class="emergency-pulse-icon" aria-hidden="true">🚨</span>
+        <div>
+          <strong class="emergency-title">¡ALERTA DE PÁNICO ACTIVADA!</strong>
+          <span id="emergency-details-text">Vehículo V-01 (Placa: ABC-123) ha activado el botón de emergencia en San Martín de Porres.</span>
+        </div>
+      </div>
+      <div class="emergency-alert-actions">
+        <button type="button" class="btn btn--sm btn--light" id="btn-go-to-panic">Ver Coordenadas</button>
+        <button type="button" class="btn btn--sm btn--success" id="btn-resolve-emergency-banner">✅ Marcar Atendida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Layout -->
+  <main id="main-content" class="container main-layout">
+
+    <!-- ====================================================================
+         PANTALLA DE AUTENTICACIÓN (LOGIN)
+         ==================================================================== -->
+    <section id="view-login" class="system-view active" aria-labelledby="heading-login">
+      <div class="login-wrapper">
+        <div class="login-card">
+          <div class="login-header">
+            <div class="login-logo" aria-hidden="true">🚛</div>
+            <h1 id="heading-login" class="login-title">Transportes Chileno E.I.R.L.</h1>
+            <p class="login-subtitle">Sistema de Monitoreo &amp; Gestión de Flota Vehicular</p>
+          </div>
+
+          <div class="login-body">
+            <form id="form-login" class="system-form">
+              <div class="form-group">
+                <label for="login-username">Usuario o Placa de Camión:*</label>
+                <input type="text" id="login-username" class="form-input" placeholder="Ej: admin, Juan Perez o ABC-123" required autocomplete="username">
+                <small class="form-hint">Administrador: <code>admin</code> | Conductor: <code>Nombre</code> o <code>Placa</code></small>
+              </div>
+
+              <div class="form-group">
+                <label for="login-password">Contraseña:*</label>
+                <div class="password-input-wrapper">
+                  <input type="password" id="login-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+                  <button type="button" id="btn-toggle-password" class="btn-toggle-pw" aria-label="Mostrar contraseña">👁️</button>
+                </div>
+                <small class="form-hint">Administrador inicial: <code>admin</code> | Conductores inicial: <code>1234</code></small>
+              </div>
+
+              <!-- Error Alert -->
+              <div id="login-error-msg" class="login-error-box hidden" role="alert">
+                ⚠️ Usuario o contraseña incorrectos. Verifique sus credenciales.
+              </div>
+
+              <button type="submit" class="btn btn--primary btn--block" id="btn-submit-login">
+                🔑 Iniciar Sesión en el Sistema
+              </button>
+            </form>
+          </div>
+
+          <div class="login-footer text-center">
+            <p class="text-xs text-muted">Acceso seguro con cifrado y control de roles RBAC — San Martín de Porres</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 1: DASHBOARD & INDICADORES DE FLOTA (HU7)
+         ==================================================================== -->
+    <section id="view-dashboard" class="system-view" aria-labelledby="heading-dashboard">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Centro de Operaciones</span>
+          <h2 id="heading-dashboard" class="view-title">Dashboard General de la Flota</h2>
+          <p class="view-lead">Estado operativo en tiempo real, disponibilidad de unidades y control de incidentes.</p>
+        </div>
+        <div class="view-header-actions">
+          <button type="button" class="btn btn--primary" id="btn-quick-new-vehicle">+ Registrar Vehículo</button>
+          <button type="button" class="btn btn--outline" id="btn-quick-assignment">+ Asignar Conductor</button>
+        </div>
+      </div>
+
+      <!-- KPI Cards Grid (HU7) -->
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-card--active" id="kpi-card-active" tabindex="0" role="button" aria-label="Ver vehículos activos">
+          <div class="kpi-icon" aria-hidden="true">🚚</div>
+          <div class="kpi-content">
+            <span class="kpi-val" id="kpi-val-active">4</span>
+            <span class="kpi-lbl">Unidades Activas (En Ruta)</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-card--idle" id="kpi-card-idle" tabindex="0" role="button" aria-label="Ver vehículos disponibles">
+          <div class="kpi-icon" aria-hidden="true">🅿️</div>
+          <div class="kpi-content">
+            <span class="kpi-val" id="kpi-val-idle">2</span>
+            <span class="kpi-lbl">Unidades Disponibles</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-card--warning" id="kpi-card-repair" tabindex="0" role="button" aria-label="Ver vehículos en taller">
+          <div class="kpi-icon" aria-hidden="true">🔧</div>
+          <div class="kpi-content">
+            <span class="kpi-val" id="kpi-val-repair">1</span>
+            <span class="kpi-lbl">En Taller / Mantenimiento</span>
+          </div>
+        </div>
+        <div class="kpi-card kpi-card--danger" id="kpi-card-alerts" tabindex="0" role="button" aria-label="Ver alertas de emergencia">
+          <div class="kpi-icon" aria-hidden="true">🚨</div>
+          <div class="kpi-content">
+            <span class="kpi-val" id="kpi-val-alerts">0</span>
+            <span class="kpi-lbl">Alertas de Emergencia</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Operations & Mini Tracking Layout -->
+      <div class="grid grid-2 mt-6">
+        <!-- Live GPS Mini Preview Card -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">📡</div>
+            <h3 class="card-title">Monitoreo GPS en Vivo — San Martín de Porres</h3>
+          </div>
+          <div class="card-body">
+            <p class="text-muted">Visualización previa del rastreo continuo de la flota sobre la red vial.</p>
+            <div id="dashboard-mini-map" class="mini-map-element" aria-label="Mapa vista previa de rastreo"></div>
+            <div class="mt-3 text-right">
+              <button type="button" class="btn btn--sm btn--outline switch-tab-btn" data-target="view-tracking">Abrir Mapa Completo 🌐</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System Alerts & Activity Feed -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">📋</div>
+            <h3 class="card-title">Registro de Actividad Reciente</h3>
+          </div>
+          <div class="card-body">
+            <div id="activity-feed" class="activity-feed-list" role="log" aria-live="polite">
+              <div class="feed-item feed-item--info">
+                <span class="feed-time">13:48</span>
+                <span class="feed-text">Sistema de monitoreo inicializado. 7 vehículos en catálogo.</span>
+              </div>
+              <div class="feed-item feed-item--success">
+                <span class="feed-time">13:42</span>
+                <span class="feed-text">Unidad V-01 iniciante trayecto Av. Dominicos &rarr; Callao.</span>
+              </div>
+              <div class="feed-item feed-item--warning">
+                <span class="feed-time">12:15</span>
+                <span class="feed-text">Unidad V-05 ingresada a taller por revisión preventiva de llantas.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 2: RASTREO GPS EN TIEMPO REAL (HU1)
+         ==================================================================== -->
+    <section id="view-tracking" class="system-view" aria-labelledby="heading-tracking">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Geolocalización GPS</span>
+          <h2 id="heading-tracking" class="view-title">Rastreo Vehicular en Tiempo Real (HU-01)</h2>
+          <p class="view-lead">Ubicación exacta, velocidad y estado de cada unidad de transporte.</p>
+        </div>
+        <div class="view-header-actions">
+          <button type="button" id="btn-recenter-map" class="btn btn--outline">🎯 Centrar Flota</button>
+        </div>
+      </div>
+
+      <div class="tracking-layout">
+        <!-- Interactive Google Maps GPS -->
+        <div class="map-container-card">
+          <div class="map-toolbar">
+            <div class="map-status">
+              <span class="pulse-dot"></span>
+              <span id="map-status-text">Recepción de Coordenadas GPS Activa</span>
+              <span id="map-engine-badge" class="badge badge--success" style="font-size:0.75rem;margin-left:0.5rem">📍 Google Maps API</span>
+            </div>
+            <div class="map-filters" style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
+              <label for="map-filter-status" class="filter-lbl">Filtrar Mapa:</label>
+              <select id="map-filter-status" class="form-select form-select--sm">
+                <option value="all">Todos los Vehículos</option>
+                <option value="En Ruta">En Ruta 🟢</option>
+                <option value="Disponible">Disponibles 🔵</option>
+                <option value="En Taller">En Taller 🔴</option>
+              </select>
+            </div>
+          </div>
+          <div id="main-gps-map" class="main-map-element" aria-label="Mapa principal interactivo de geolocalización"></div>
+        </div>
+
+        <!-- Vehicle Inspector Sidebar Panel -->
+        <aside class="vehicle-inspector-card" id="vehicle-inspector">
+          <h3 class="inspector-title">Detalle de la Unidad</h3>
+          <div id="inspector-content" class="inspector-body">
+            <div class="text-center text-muted py-4">
+              <span style="font-size: 2.5rem; display: block;" aria-hidden="true">🚚</span>
+              Selecciona un vehículo en el mapa o en la lista para inspeccionar sus datos en tiempo real.
+            </div>
+          </div>
+
+          <!-- Lista Interactiva de Flota Monitoreada -->
+          <div class="gps-fleet-list-wrapper mt-4">
+            <div class="gps-fleet-list-header">
+              <h4 class="text-sm font-bold text-muted uppercase">Unidades Monitoreadas</h4>
+              <span id="gps-units-badge" class="badge badge--info">0 activas</span>
+            </div>
+            <div id="gps-vehicle-list" class="gps-vehicle-list" role="list"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 3: GESTIÓN DE FLOTA VEHICULAR (CRUD & FILTROS) (HU3, HU9)
+         ==================================================================== -->
+    <section id="view-fleet" class="system-view" aria-labelledby="heading-fleet">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Catálogo &amp; Inventario</span>
+          <h2 id="heading-fleet" class="view-title">Gestión de Flota Vehicular (HU-03 / HU-09)</h2>
+          <p class="view-lead">Registro, edición, baja lógica de camiones y filtrado por capacidad.</p>
+        </div>
+        <div class="view-header-actions">
+          <button type="button" class="btn btn--primary" id="btn-open-vehicle-modal">+ Registrar Nuevo Vehículo</button>
+        </div>
+      </div>
+
+      <!-- Filter Controls (HU9) -->
+      <div class="filter-bar-card">
+        <div class="filter-group">
+          <label for="filter-fleet-capacity" class="filter-lbl">Capacidad de Carga:</label>
+          <select id="filter-fleet-capacity" class="form-select">
+            <option value="all">Todas las capacidades</option>
+            <option value="light">Hasta 5 Toneladas</option>
+            <option value="medium">5 - 15 Toneladas</option>
+            <option value="heavy">Más de 15 Toneladas</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-fleet-status" class="filter-lbl">Estado:</label>
+          <select id="filter-fleet-status" class="form-select">
+            <option value="all">Todos los estados</option>
+            <option value="En Ruta">En Ruta</option>
+            <option value="Disponible">Disponible</option>
+            <option value="En Taller">En Taller</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filter-fleet-search" class="filter-lbl">Buscar Placa/Marca:</label>
+          <input type="text" id="filter-fleet-search" class="form-input" placeholder="Ej: ABC-123, Volvo...">
+        </div>
+        <div class="filter-summary" id="fleet-filter-summary">
+          Mostrando 7 de 7 vehículos
+        </div>
+      </div>
+
+      <!-- Vehicles Table -->
+      <div class="card card--full-width mt-4">
+        <div class="table-responsive">
+          <table class="data-table data-table--striped" aria-label="Tabla de unidades vehiculares de Transportes Chileno">
+            <thead>
+              <tr>
+                <th scope="col">ID / Placa</th>
+                <th scope="col">Marca &amp; Modelo</th>
+                <th scope="col">Año</th>
+                <th scope="col">Capacidad (Ton)</th>
+                <th scope="col">Documentación</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="fleet-table-body">
+              <!-- Dynamically populated via script.js -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 4: ASIGNACIÓN DE CONDUCTORES A VEHÍCULOS (HU5)
+         ==================================================================== -->
+    <section id="view-assignments" class="system-view" aria-labelledby="heading-assignments">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Programación Operativa</span>
+          <h2 id="heading-assignments" class="view-title">Asignación de Conductores a Vehículos (HU-05)</h2>
+          <p class="view-lead">Vinculación de conductores disponibles con unidades vehiculares para la jornada de transporte.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <!-- Assignment Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">🔑</div>
+            <h3 class="card-title">Nueva Asignación de Despacho</h3>
+          </div>
+          <div class="card-body">
+            <form id="form-assignment" class="system-form">
+              <div class="form-group">
+                <label for="assign-vehicle-select">Seleccionar Vehículo:*</label>
+                <select id="assign-vehicle-select" class="form-select" required>
+                  <option value="">-- Seleccionar Unidad --</option>
+                </select>
+                <small class="form-hint">Solo se pueden asignar unidades en estado "Disponible".</small>
+              </div>
+
+              <div class="form-group">
+                <label for="assign-driver-select">Seleccionar Conductor:*</label>
+                <select id="assign-driver-select" class="form-select" required>
+                  <option value="">-- Seleccionar Conductor Disponible --</option>
+                </select>
+                <small class="form-hint">El menú filtra únicamente conductores con estado "Disponible".</small>
+              </div>
+
+              <div class="form-group">
+                <label for="assign-date">Fecha y Hora de Inicio:</label>
+                <input type="datetime-local" id="assign-date" class="form-input" required>
+              </div>
+
+              <button type="submit" class="btn btn--primary btn--block">Confirmar Asignación</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Active Assignments List -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">📋</div>
+            <h3 class="card-title">Asignaciones Activas para el Viaje</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table" aria-label="Tabla de asignaciones activas de conductor a vehículo">
+                <thead>
+                  <tr>
+                    <th scope="col">Vehículo</th>
+                    <th scope="col">Conductor</th>
+                    <th scope="col">Inicio</th>
+                    <th scope="col">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="assignments-table-body">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 5: HISTORIAL DE RECORRIDOS & RUTAS (HU2)
+         ==================================================================== -->
+    <section id="view-history" class="system-view" aria-labelledby="heading-history">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Auditoría de Trayectos</span>
+          <h2 id="heading-history" class="view-title">Historial de Recorridos &amp; Paradas (HU-02)</h2>
+          <p class="view-lead">Consulta de trayectos realizados en los últimos 15 días retrospectivos.</p>
+        </div>
+      </div>
+
+      <!-- History Filter Form -->
+      <div class="filter-bar-card">
+        <form id="form-history-filter" class="history-filter-form">
+          <div class="filter-group">
+            <label for="history-start-date" class="filter-lbl">Fecha Desde:*</label>
+            <input type="date" id="history-start-date" class="form-input" required>
+          </div>
+          <div class="filter-group">
+            <label for="history-end-date" class="filter-lbl">Fecha Hasta:*</label>
+            <input type="date" id="history-end-date" class="form-input" required>
+          </div>
+          <div class="filter-group">
+            <label for="history-vehicle-select" class="filter-lbl">Vehículo:</label>
+            <select id="history-vehicle-select" class="form-select">
+              <option value="all">Todos los vehículos</option>
+            </select>
+          </div>
+          <div class="filter-group filter-actions">
+            <button type="submit" class="btn btn--primary">Buscar Recorridos</button>
+            <button type="button" class="btn btn--outline" id="btn-reset-history">Limpiar Filtros</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- History Results Table -->
+      <div class="card card--full-width mt-4">
+        <div class="card-header">
+          <h3 class="card-title">Registros de Trayectos Encontrados</h3>
+          <span id="history-loader" class="history-spinner hidden" aria-label="Cargando recorridos...">🔄 Consultando BD (&lt;3s)...</span>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table data-table--striped" aria-label="Historial de recorridos de los vehículos">
+              <thead>
+                <tr>
+                  <th scope="col">Fecha</th>
+                  <th scope="col">Vehículo</th>
+                  <th scope="col">Conductor</th>
+                  <th scope="col">Origen / Destino</th>
+                  <th scope="col">Hora Inicio / Fin</th>
+                  <th scope="col">Paradas Prolongadas</th>
+                  <th scope="col">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="history-table-body">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 6: HISTORIAL DE FALLAS MECÁNICAS (HU10)
+         ==================================================================== -->
+    <section id="view-faults" class="system-view" aria-labelledby="heading-faults">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Mantenimiento Vehicular</span>
+          <h2 id="heading-faults" class="view-title">Registro de Fallas Mecánicas (HU-10)</h2>
+          <p class="view-lead">Trazabilidad de averías, reparaciones y evaluación de vida útil de camiones.</p>
+        </div>
+        <div class="view-header-actions">
+          <button type="button" class="btn btn--primary" id="btn-open-fault-modal">+ Registrar Falla Mecánica</button>
+        </div>
+      </div>
+
+      <div class="card card--full-width">
+        <div class="table-responsive">
+          <table class="data-table data-table--striped" aria-label="Historial de fallas mecánicas registradas">
+            <thead>
+              <tr>
+                <th scope="col">ID Falla</th>
+                <th scope="col">Vehículo</th>
+                <th scope="col">Fecha Registro</th>
+                <th scope="col">Categoría</th>
+                <th scope="col">Descripción de la Falla</th>
+                <th scope="col">Estado Mantenimiento</th>
+                <th scope="col">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="faults-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 7: BANDEJA DE ALERTAS & PÁNICO (HU8)
+         ==================================================================== -->
+    <section id="view-alerts" class="system-view" aria-labelledby="heading-alerts">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Seguridad &amp; Monitoreo de Emergencias</span>
+          <h2 id="heading-alerts" class="view-title">Bandeja de Alertas de Pánico &amp; Incidentes (HU-08)</h2>
+          <p class="view-lead">Recepción instantánea de alertas en ruta con geolocalización precisa.</p>
+        </div>
+      </div>
+
+      <div class="card card--full-width">
+        <div class="table-responsive">
+          <table class="data-table" aria-label="Bandeja de alertas de pánico e incidencias en ruta">
+            <thead>
+              <tr>
+                <th scope="col">ID Alerta</th>
+                <th scope="col">Fecha / Hora</th>
+                <th scope="col">Vehículo</th>
+                <th scope="col">Conductor</th>
+                <th scope="col">Tipo de Alerta</th>
+                <th scope="col">Coordenadas GPS (Lat, Lng)</th>
+                <th scope="col">Estado Alerta</th>
+                <th scope="col">Acción Supervisor</th>
+              </tr>
+            </thead>
+            <tbody id="alerts-table-body">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 8: GENERACIÓN DE REPORTES EXPORTABLES REALES (HU6)
+         ==================================================================== -->
+    <section id="view-reports" class="system-view" aria-labelledby="heading-reports">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Informes Ejecutivos &amp; Gerenciales</span>
+          <h2 id="heading-reports" class="view-title">Generación de Reportes Exportables (HU-06)</h2>
+          <p class="view-lead">Exportación formal de datos operativos en formato Excel (.xlsx) real y PDF listo para imprimir.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">📊</div>
+            <h3 class="card-title">Parámetros del Reporte de Flota</h3>
+          </div>
+          <div class="card-body">
+            <form id="form-report-generator" class="system-form">
+              <div class="form-group">
+                <label for="report-type-select">Tipo de Reporte:</label>
+                <select id="report-type-select" class="form-select">
+                  <option value="flota">Reporte General de Flota y Estado de Unidades</option>
+                  <option value="recorridos">Reporte de Recorridos, Tiempos y Distancias</option>
+                  <option value="fallas">Reporte de Historial de Fallas Mecánicas</option>
+                  <option value="alertas">Reporte de Incidencias y Botón de Pánico</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="report-period">Período de Evaluación:</label>
+                <select id="report-period" class="form-select">
+                  <option value="mes">Mes Actual</option>
+                  <option value="semana">Últimos 7 días</option>
+                  <option value="quincena">Últimos 15 días</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label>Formato de Exportación:*</label>
+                <div class="radio-group">
+                  <label class="radio-lbl">
+                    <input type="radio" name="report-format" value="excel" checked>
+                    <span>Excel (.xlsx) — Archivo descargable real con hojas formateadas</span>
+                  </label>
+                  <label class="radio-lbl">
+                    <input type="radio" name="report-format" value="pdf">
+                    <span>PDF (.pdf) — Documento corporativo imprimible con membrete</span>
+                  </label>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn--primary btn--block" id="btn-generate-report">
+                📥 Generar &amp; Descargar Reporte Real
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">📁</div>
+            <h3 class="card-title">Historial de Descargas de Reportes</h3>
+          </div>
+          <div class="card-body">
+            <ul class="download-history-list" id="download-history-list">
+              <li class="history-item">
+                <span class="file-icon">📊</span>
+                <div>
+                  <strong>Reporte_Flota_29092026.xlsx</strong>
+                  <p class="file-meta">Generado el 29/09/2026 | Formato Excel Real | Descarga Lista</p>
+                </div>
+                <span class="badge badge--success">Descargado</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA 9: SEGURIDAD & GESTIÓN DE CREDENCIALES (ADMIN)
+         ==================================================================== -->
+    <section id="view-security" class="system-view" aria-labelledby="heading-security">
+      <div class="view-header">
+        <div>
+          <span class="view-kicker">Panel Administrativo de Seguridad</span>
+          <h2 id="heading-security" class="view-title">Gestión de Credenciales &amp; Accesos</h2>
+          <p class="view-lead">Administración de usuarios y contraseñas para administradores y conductores.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-2">
+        <!-- Admin Credentials Form -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">👨‍💼</div>
+            <h3 class="card-title">Actualizar Credenciales de Administrador</h3>
+          </div>
+          <div class="card-body">
+            <form id="form-admin-credentials" class="system-form">
+              <div class="form-group">
+                <label for="admin-user-input">Usuario Administrador:*</label>
+                <input type="text" id="admin-user-input" class="form-input" required>
+              </div>
+
+              <div class="form-group">
+                <label for="admin-pass-input">Nueva Contraseña:*</label>
+                <input type="text" id="admin-pass-input" class="form-input" required>
+              </div>
+
+              <button type="submit" class="btn btn--primary btn--block">Guardar Credenciales de Admin</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Drivers Credentials List & Password Reset -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon" aria-hidden="true">👨‍✈️</div>
+            <h3 class="card-title">Credenciales de Conductores (Login)</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table" aria-label="Tabla de gestión de contraseñas de conductores">
+                <thead>
+                  <tr>
+                    <th scope="col">Conductor</th>
+                    <th scope="col">Placa (Login alternativo)</th>
+                    <th scope="col">Contraseña Actual</th>
+                    <th scope="col">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="driver-credentials-table-body">
+                  <!-- Dynamically populated via script.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         VISTA MÓVIL ESPECIAL: INTERFAZ DEL CONDUCTOR (HU4, HU8)
+         ==================================================================== -->
+    <section id="view-driver-app" class="system-view" aria-labelledby="heading-driver-app">
+      <div class="driver-mobile-container">
+        <div class="driver-mobile-header">
+          <span class="driver-badge">App Móvil Conductor en Ruta</span>
+          <h2>Transportes Chileno E.I.R.L.</h2>
+          <p id="driver-logged-info">Conductor: <strong>Juan Perez</strong> | Vehículo: <strong>V-01 (ABC-123)</strong></p>
+        </div>
+
+        <!-- Panic Emergency Button (HU8) -->
+        <div class="driver-section panic-container-mobile">
+          <h3 class="mobile-section-title">🚨 HU-08: Emergencia en Carretera</h3>
+          <p class="text-muted text-sm mb-3">En caso de accidente, robo o auxilio mecánico, presione el botón de pánico.</p>
+          <button type="button" id="btn-driver-panic" class="btn btn--panic-mobile">
+            <span class="panic-icon" aria-hidden="true">🚨</span>
+            <span>EMITIR BOTÓN DE PÁNICO</span>
+          </button>
+        </div>
+
+        <!-- Driver Status Switcher (HU4) -->
+        <div class="driver-section">
+          <h3 class="mobile-section-title">HU-04: Actualización de Estado en Ruta</h3>
+          <p class="text-muted text-sm mb-3">Seleccione su estado actual para notificar al supervisor en menos de 5 segundos.</p>
+          
+          <div class="status-touch-grid">
+            <button type="button" class="btn-status-touch active" data-status="En Ruta">
+              <span class="status-indicator status-indicator--green"></span>
+              <span>🟢 EN RUTA</span>
+            </button>
+            <button type="button" class="btn-status-touch" data-status="En Descanso">
+              <span class="status-indicator status-indicator--yellow"></span>
+              <span>🟡 EN DESCANSO</span>
+            </button>
+            <button type="button" class="btn-status-touch" data-status="Avería">
+              <span class="status-indicator status-indicator--red"></span>
+              <span>🔴 AVERÍA</span>
+            </button>
+          </div>
+
+          <!-- Optional comment box for breakdown -->
+          <div id="driver-comment-container" class="form-group mt-3 hidden">
+            <label for="driver-breakdown-comment">Comentario sobre la Avería (Opcional):</label>
+            <textarea id="driver-breakdown-comment" class="form-textarea" rows="3" placeholder="Describa brevemente la falla mecánica o incidente..."></textarea>
+          </div>
+
+          <button type="button" id="btn-save-driver-status" class="btn btn--primary btn--block mt-3">
+            Guardar Estado Actual
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       MODALES DE OPERACIÓN
+       ==================================================================== -->
+  
+  <!-- Modal 1: Registrar / Editar Vehículo (HU3) -->
+  <div class="modal-backdrop hidden" id="modal-vehicle-backdrop" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-vehicle-title">
+      <div class="modal-header">
+        <h3 id="modal-vehicle-title" class="modal-title">Registrar Nuevo Vehículo</h3>
+        <button type="button" class="btn-close" id="btn-close-vehicle-modal" aria-label="Cerrar ventana">&times;</button>
+      </div>
+      <form id="form-vehicle-crud">
+        <input type="hidden" id="v-edit-id" value="">
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="v-placa">Placa del Vehículo (Formato ABC-123):*</label>
+            <input type="text" id="v-placa" class="form-input" placeholder="ABC-123" required pattern="[A-Z0-9]{3}-[0-9]{3}">
+            <small class="form-hint">Debe ser único en la base de datos.</small>
+          </div>
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="v-marca">Marca:*</label>
+              <input type="text" id="v-marca" class="form-input" placeholder="Ej. Volvo, Scania" required>
+            </div>
+            <div class="form-group">
+              <label for="v-modelo">Modelo:*</label>
+              <input type="text" id="v-modelo" class="form-input" placeholder="Ej. FH16" required>
+            </div>
+          </div>
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="v-anio">Año:*</label>
+              <input type="number" id="v-anio" class="form-input" min="2000" max="2027" value="2024" required>
+            </div>
+            <div class="form-group">
+              <label for="v-capacidad">Capacidad de Carga (Toneladas):*</label>
+              <input type="number" id="v-capacidad" class="form-input" step="0.1" min="0.5" max="50" placeholder="Ej. 15.5" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="v-estado">Estado:*</label>
+            <select id="v-estado" class="form-select" required>
+              <option value="Disponible">Disponible</option>
+              <option value="En Ruta">En Ruta</option>
+              <option value="En Taller">En Taller</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn--outline" id="btn-cancel-vehicle-modal">Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-vehicle-submit">Guardar Vehículo</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 2: Registrar / Editar Falla Mecánica (HU10) -->
+  <div class="modal-backdrop hidden" id="modal-fault-backdrop" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-fault-title">
+      <div class="modal-header">
+        <h3 id="modal-fault-title" class="modal-title">Registrar Falla Mecánica</h3>
+        <button type="button" class="btn-close" id="btn-close-fault-modal" aria-label="Cerrar ventana">&times;</button>
+      </div>
+      <form id="form-fault-crud">
+        <input type="hidden" id="fault-edit-id" value="">
+
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="fault-vehicle-select">Vehículo Afiliado:*</label>
+            <select id="fault-vehicle-select" class="form-select" required>
+              <option value="">-- Seleccionar Vehículo --</option>
+            </select>
+          </div>
+          <div class="grid grid-2">
+            <div class="form-group">
+              <label for="fault-date">Fecha de Ocurrencia:*</label>
+              <input type="date" id="fault-date" class="form-input" required>
+              <small class="form-hint">No puede ser una fecha futura.</small>
+            </div>
+            <div class="form-group">
+              <label for="fault-category">Categoría de Falla:*</label>
+              <select id="fault-category" class="form-select" required>
+                <option value="Motor">Motor / Propulsión</option>
+                <option value="Frenos">Sistema de Frenos</option>
+                <option value="Llantas">Llantas / Neumáticos</option>
+                <option value="Eléctrico">Sistema Eléctrico</option>
+                <option value="Transmisión">Transmisión / Caja</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="fault-desc">Descripción Detallada:*</label>
+            <textarea id="fault-desc" class="form-textarea" rows="4" maxlength="500" placeholder="Describa los síntomas de la falla..." required></textarea>
+            <div class="text-right text-xs text-muted mt-1">
+              Caracteres restantes: <span id="fault-char-counter">500</span> / 500
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn--outline" id="btn-cancel-fault-modal">Cancelar</button>
+          <button type="submit" class="btn btn--primary" id="btn-save-fault-submit">Guardar Falla</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal 3: Cambiar Contraseña de Conductor (Admin) -->
+  <div class="modal-backdrop hidden" id="modal-driver-pass-backdrop" aria-hidden="true">
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="modal-driver-pass-title">
+      <div class="modal-header">
+        <h3 id="modal-driver-pass-title" class="modal-title">Cambiar Contraseña de Conductor</h3>
+        <button type="button" class="btn-close" id="btn-close-driver-pass-modal" aria-label="Cerrar ventana">&times;</button>
+      </div>
+      <form id="form-change-driver-pass">
+        <input type="hidden" id="edit-driver-id" value="">
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="edit-driver-name-display">Conductor:</label>
+            <input type="text" id="edit-driver-name-display" class="form-input" readonly disabled>
+          </div>
+          <div class="form-group">
+            <label for="edit-driver-new-pass">Nueva Contraseña:*</label>
+            <input type="text" id="edit-driver-new-pass" class="form-input" placeholder="Ej: 5678" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn--outline" id="btn-cancel-driver-pass-modal">Cancelar</button>
+          <button type="submit" class="btn btn--primary">Actualizar Contraseña</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Container for Notifications -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- SheetJS CDN for Real Excel Export (.xlsx) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Main Operational Script -->
+  <script src="script.js"></script>
+
+  <!-- Google Maps JavaScript API -->
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDE_kH2GY_jirTiMtCSMSjwPgcRQ_xgP8M&callback=initMap"></script>
+</body>
+</html>
